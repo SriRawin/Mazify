@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:mazify/2d_grid.dart';
+import 'package:mazify/Screens/2dGrid.dart';
 
 List<List<int>> grid;
 List<List<Node>> nodes;
@@ -234,24 +234,13 @@ const double d2 = 14;
 double heuristic(int i, int j) {
   var dx = (i - endi).abs();
   var dy = (j - endj).abs();
-  //return d1 * (dx + dy);
-  //return math.sqrt(dx *dx + dy * dy);
+
   return d1 * (dx + dy) + (d2 - 2 * d1) * math.min(dx, dy);
-  // return math.sqrt(math.pow((i-endi), 2) + math.pow((j-endj), 2)).toDouble();
 }
 
 double distance(int i, int j, int k, int l) {
   var dx = (i - k).abs();
   var dy = (j - l).abs();
-  //return math.sqrt(dx *dx + dy * dy);
-  //return d1 * (dx + dy);
+
   return d1 * (dx + dy) + (d2 - 2 * d1) * math.min(dx, dy);
-  // var a = (i - k).abs();
-  // var b = (j - l).abs();
-  // if (a + b == 1) {
-  //   return 10;
-  // }else {
-  //   return 14;
-  // }
-  // return math.sqrt(math.pow((i-k), 2) + math.pow((j-l), 2)).toDouble();
 }

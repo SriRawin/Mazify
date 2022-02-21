@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:mazify/2d_grid.dart';
+import 'package:mazify/Screens/2dGrid.dart';
 
 List<List<MazeNode>> mazeNodes;
 List<MazeNode> stack = <MazeNode>[];

@@ -2,23 +2,11 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:mazify/algorithms.dart';
-import 'package:mazify/gesture_handler.dart';
-import 'package:mazify/node_widgets.dart';
+import 'package:mazify/Algorithms/PathAlgorithms.dart';
+import 'package:mazify/utils/Nodes.dart';
+import 'package:mazify/utils/constants.dart';
 import 'package:provider/provider.dart';
 
-// class Nodes{
-
-//   static const Node wallNode = Node(
-//     nodeWidget: WallNodePaintWidget(unitSize, i, j, callback, removeNode)
-//   );
-// }
-// class Node{
-//   const Node({this.nodeWidget,this.type,this.staticRect});
-//   final Widget nodeWidget;
-//   final int type;
-//   final Rect staticRect;
-// }
 enum GridGenerationFunction {
   random,
   backtracker,
@@ -30,19 +18,23 @@ enum VisualizerAlgorithm { astar, dijkstra, bidir_dijkstra }
 enum Brush { wall, start, finish, closed, open, shortestPath }
 
 class Grid extends ChangeNotifier {
-  Grid(this.rows, this.columns, this.unitSize, this.starti, this.startj,
-      this.finishi, this.finishj) {
+  Grid(
+      {this.rows,
+      this.columns,
+      this.unitSize,
+      this.starti,
+      this.startj,
+      this.finishi,
+      this.finishj}) {
     nodeTypes = List.generate(rows, (_) => List.filled(columns, 0));
     nodes = List.generate(rows, (_) => List.filled(columns, null));
     staticNodes = List.generate(rows, (_) => List.filled(columns, null));
     staticShortPathNode =
         List.generate(rows, (_) => List.filled(columns, null));
 
-    // double xBox = (width - rows - 1) / rows;
-    // double yBox = (height - columns - 1) / columns;
     width = unitSize * rows + rows + 1;
     height = unitSize * columns + columns + 1;
-    //unitSize = min(yBox, xBox);
+
     addNode(starti, startj, Brush.start);
     addNode(finishi, finishj, Brush.finish);
     _currentNode = Node(finishi, finishj);
@@ -71,24 +63,16 @@ class Grid extends ChangeNotifier {
   List<List<Color>> staticShortPathNode;
 
   Widget gridWidget(
-      {BuildContext context,
+      {BoxConstraints constraints,
       Function(int i, int j) onTapNode,
       Function(int i, int j, int k, int l, int type) onDragNode,
       Function(double scale, double zoom) onScaleUpdate,
       Function onDragNodeEnd}) {
     return ChangeNotifierProvider.value(
       value: this,
-      child: GridGestureDetector(
-        width: width,
-        height: height,
-        onDragNode: (i, j, k, l, t) => onDragNode(i, j, k, l, t),
-        onTapNode: (i, j) => onTapNode(i, j),
-        unitSize: unitSize,
-        rows: rows,
-        columns: columns,
-        nodeTypes: nodeTypes,
-        onScaleUpdate: (scale, zoom) => 0, //updateDecorationScale(scale),
-        onDragNodeEnd: () => onDragNodeEnd(),
+      child: Container(
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
         child: GridWidget(rows, columns, unitSize, width, height),
       ),
     );
@@ -129,8 +113,8 @@ class Grid extends ChangeNotifier {
         nodeTypes[i][j] = 1;
       }
     }
-    staticNodes.forEach(
-        (l) => l.fillRange(0, nodeTypes[0].length - 1, Color(0xff212121)));
+    staticNodes
+        .forEach((l) => l.fillRange(0, nodeTypes[0].length - 1, KgreenShade1));
     nodeTypes[starti][startj] = 2;
     nodeTypes[endi][endj] = 3;
     staticNodes[starti][startj] = null;
@@ -175,7 +159,7 @@ class Grid extends ChangeNotifier {
               left: 0.50 + i * (unitSize.toDouble() + 1),
               top: 0.50 + j * (unitSize.toDouble() + 1),
               child: WallNodePaintWidget(
-                color: Color(0xff212121),
+                color: KgreenShade1.withOpacity(0.8),
                 unitSize: unitSize,
                 i: i,
                 j: j,
@@ -204,23 +188,7 @@ class Grid extends ChangeNotifier {
         case Brush.open:
           nodeTypes[i][j] = 4;
           _updateStaticNode(i, j, Color(0xff7e8ce0).withOpacity(0.8));
-          // nodes[i][j] = Positioned(
-          //   key: UniqueKey(),
-          //   left: 0.50 + i * (unitSize.toDouble() + 1),
-          //   top: 0.50 + j * (unitSize.toDouble() + 1),
-          //   child: VisitedNodePaintWidget(
-          //     color: Colors.cyan.withOpacity(0.8),
-          //     unitSize: unitSize,
-          //     i: i,
-          //     j: j,
-          //     callback: (i, j, color) {
-          //       if (nodeTypes[i][j] == 4) {
-          //         _updateStaticNode(i, j, color);
-          //         removeNodeWidgetOnly(i, j);
-          //       }
-          //     },
-          //   )
-          // );
+
           break;
         case Brush.closed:
           nodeTypes[i][j] = 5;
@@ -229,7 +197,7 @@ class Grid extends ChangeNotifier {
               left: 0.50 + i * (unitSize.toDouble() + 1),
               top: 0.50 + j * (unitSize.toDouble() + 1),
               child: VisitedNodePaintWidget(
-                color: Color(0xff4acfac).withOpacity(0.8),
+                color: Colors.white54,
                 unitSize: unitSize,
                 i: i,
                 j: j,
@@ -416,18 +384,6 @@ class Grid extends ChangeNotifier {
         removeNode(i, j, 1);
       }
     }
-    // Timer.periodic(Duration(microseconds: 1000), (timer) {
-    //   removeNode(i, j, 1);
-    //   i++;
-    //   if (i == nodeTypes.length) {
-    //     i = 0;
-    //     j++;
-    //   }
-    //   if (j == nodeTypes[0].length) {
-    //     onFinished();
-    //     timer.cancel();
-    //   }
-    // });
   }
 
   bool get isPanning => _isPanning;
@@ -458,16 +414,15 @@ class GridWidget extends StatefulWidget {
 class _GridWidgetState extends State<GridWidget> {
   @override
   Widget build(BuildContext context) {
-    final grid = FittedBox(
-      child: SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: CustomPaint(
-            painter: GridPainter(widget.rows, widget.columns, widget.unitSize,
-                widget.width, widget.height, context)),
-      ),
+    final grid = Container(
+      color: Colors.transparent,
+      width: widget.width,
+      height: widget.height,
+      child: CustomPaint(
+          painter: GridPainter(widget.rows, widget.columns, widget.unitSize,
+              widget.width, widget.height, context)),
     );
-    print("grid built");
+
     return Stack(
       children: <Widget>[
         grid,
@@ -478,13 +433,6 @@ class _GridWidgetState extends State<GridWidget> {
                 painter: StaticNodePainter(staticNodes, widget.unitSize));
           },
         ),
-        // Consumer<Grid>(
-        //   builder: (_,grid,__) {
-        //     return CustomPaint(
-        //       painter: StaticNodePainter(grid.staticShortPathNode,widget.unitSize)
-        //     );
-        //   },
-        // ),
         Selector<Grid, Node>(
           selector: (_, model) => model._currentNode,
           builder: (_, currentNode, __) {
@@ -512,19 +460,6 @@ class _GridWidgetState extends State<GridWidget> {
             );
           },
         ),
-        // Consumer<Grid>(
-        //   builder: (_,model,__) {
-        //     return Positioned(
-        //       left: model.currentPosX,
-        //       top: model.currentPosY,
-        //       child: Container(
-        //         color: Colors.red,
-        //         width: widget.unitSize+1,
-        //         height: widget.unitSize+1,
-        //       ),
-        //     );
-        //   },
-        // ),
       ],
     );
   }
@@ -548,12 +483,6 @@ class StaticNodePainter extends CustomPainter {
         }
       }
     }
-
-    // staticNodes
-    //   .expand((row) => row)
-    //   .toList()
-    //   .where((rect) => rect != null)
-    //   .forEach((rect) => canvas.drawRect(rect, paint));
   }
 
   @override
@@ -574,14 +503,10 @@ class GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint();
-
-    var background = Rect.fromLTRB(0, 0, size.width, size.height);
-    paint.color = Theme.of(context).scaffoldBackgroundColor;
-    canvas.drawRect(background, paint);
-
-    paint.color = Theme.of(context).primaryColorLight;
-    paint.strokeWidth = 1;
+    Paint paint = Paint()
+      ..strokeWidth = 1.5
+      ..color = KgreenShade1
+      ..style = PaintingStyle.stroke;
 
     for (var i = 0; i < rows + 1; i++) {
       canvas.drawLine(Offset(i.toDouble() * (unitSize + 1) + 0.5, 0),
@@ -606,9 +531,9 @@ class PathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Color(0xffffa48e)
+      ..color = Colors.black
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30;
+      ..strokeWidth = 15;
 
     Path path = Path();
     drawingNode = currentNode;
@@ -638,7 +563,7 @@ class SecondPathPainter extends CustomPainter {
     Paint paint = Paint()
       ..color = Colors.amber
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30;
+      ..strokeWidth = 15;
 
     Path path = Path();
     drawingNode = currentNode;
