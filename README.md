@@ -2,4 +2,4 @@
 
 ## A pathfinding algorithm visualizer
 
-https://mazify.herokuapp.com/
+https://srirawin.github.io/mazify.io/#/
